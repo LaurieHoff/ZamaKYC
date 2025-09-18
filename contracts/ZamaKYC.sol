@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {FHE, euint32, euint256, ebool, externalEuint32, externalEuint256} from "@fhevm/solidity/lib/FHE.sol";
+import {FHE, euint32, externalEuint32} from "@fhevm/solidity/lib/FHE.sol";
 import {SepoliaConfig} from "@fhevm/solidity/config/ZamaConfig.sol";
 
 contract ZamaKYC is SepoliaConfig {
@@ -14,8 +14,8 @@ contract ZamaKYC is SepoliaConfig {
     }
     
     struct KYCInfo {
-        euint256 identityDocumentHash;  // IPFS hash转换后的加密数字
-        euint32 name;                   // 姓名转换后的加密数字  
+        string identityDocumentHash;    // IPFS hash（明文存储）
+        string name;                    // 姓名（明文存储）
         euint32 nationality;            // 国籍ID的加密数字
         euint32 birthYear;              // 出生年份的加密数字
         KYCStatus status;               // KYC状态（明文）
@@ -45,8 +45,8 @@ contract ZamaKYC is SepoliaConfig {
     }
     
     function submitKYC(
-        externalEuint256 _identityDocumentHash,
-        externalEuint32 _name,
+        string calldata _identityDocumentHash,
+        string calldata _name,
         externalEuint32 _nationality,
         externalEuint32 _birthYear,
         bytes calldata inputProof
@@ -54,15 +54,13 @@ contract ZamaKYC is SepoliaConfig {
         require(!kycRecords[msg.sender].exists, "KYC already submitted");
         
         // 验证并转换外部加密输入
-        euint256 encryptedHash = FHE.fromExternal(_identityDocumentHash, inputProof);
-        euint32 encryptedName = FHE.fromExternal(_name, inputProof);
         euint32 encryptedNationality = FHE.fromExternal(_nationality, inputProof);
         euint32 encryptedBirthYear = FHE.fromExternal(_birthYear, inputProof);
-        
+
         // 创建KYC记录
         kycRecords[msg.sender] = KYCInfo({
-            identityDocumentHash: encryptedHash,
-            name: encryptedName,
+            identityDocumentHash: _identityDocumentHash,  // IPFS hash明文存储
+            name: _name,  // 姓名明文存储
             nationality: encryptedNationality,
             birthYear: encryptedBirthYear,
             status: KYCStatus.Pending,
@@ -73,10 +71,6 @@ contract ZamaKYC is SepoliaConfig {
         registeredUsers.push(msg.sender);
         
         // 设置访问控制权限
-        FHE.allowThis(encryptedHash);
-        FHE.allow(encryptedHash, owner);
-        FHE.allowThis(encryptedName);
-        FHE.allow(encryptedName, owner);
         FHE.allowThis(encryptedNationality);
         FHE.allow(encryptedNationality, owner);
         FHE.allowThis(encryptedBirthYear);
@@ -106,10 +100,18 @@ contract ZamaKYC is SepoliaConfig {
     function getKYCStatus(address user) external view kycExists(user) returns (KYCStatus, uint256) {
         return (kycRecords[user].status, kycRecords[user].timestamp);
     }
+
+    function getKYCName(address user) external view kycExists(user) returns (string memory) {
+        return kycRecords[user].name;
+    }
+
+    function getKYCDocumentHash(address user) external view kycExists(user) returns (string memory) {
+        return kycRecords[user].identityDocumentHash;
+    }
     
-    function getEncryptedKYCInfo(address user) external view kycExists(user) returns (
-        euint256 identityDocumentHash,
-        euint32 name,
+    function getKYCInfo(address user) external view kycExists(user) returns (
+        string memory identityDocumentHash,
+        string memory name,
         euint32 nationality,
         euint32 birthYear
     ) {
