@@ -8,6 +8,7 @@ task("kyc:submit", "Submit KYC information")
   .addParam("birthyear", "Birth year")
   .setAction(async (taskArgs, hre) => {
     const { fhevm } = hre;
+    await fhevm.initializeCLIApi()
     const [signer] = await hre.ethers.getSigners();
     const contractAddress = taskArgs.contract;
 
