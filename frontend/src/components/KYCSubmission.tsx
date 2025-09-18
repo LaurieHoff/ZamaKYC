@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount } from 'wagmi';
+import { Contract } from 'ethers';
+import { useEthersSigner } from '../hooks/useEthersSigner';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from '../config/contracts';
 import { useZamaInstance } from '../hooks/useZamaInstance';
 import { mockIPFSUpload, isValidIPFSHash } from '../utils/ipfs';
@@ -15,6 +17,7 @@ interface KYCData {
 export function KYCSubmission() {
   const { address } = useAccount();
   const { instance, isLoading: zamaLoading } = useZamaInstance();
+  const signerPromise = useEthersSigner();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<KYCData>({
@@ -29,11 +32,9 @@ export function KYCSubmission() {
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
-
-  const { writeContract, data: hash } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
-  });
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [hash, setHash] = useState<string>('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -84,7 +85,7 @@ export function KYCSubmission() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!instance || !address || !formData.identityDocument || !ipfsHash) {
+    if (!instance || !address || !formData.identityDocument || !ipfsHash || !signerPromise) {
       alert('Please fill all fields and upload a document');
       return;
     }
@@ -103,23 +104,37 @@ export function KYCSubmission() {
 
       const encryptedInput = await input.encrypt();
 
+      // Await the signer from the promise
+      const signer = await signerPromise;
+
+      // Create contract instance with ethers
+      const kycContract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+      console.log("submitKYC:", formData.name, ipfsHash, encryptedInput.handles[0], encryptedInput.handles[1], encryptedInput.inputProof);
+
       // Submit to contract with plain text hash and name, encrypted nationality and birth year
-      writeContract({
-        address: CONTRACT_ADDRESS,
-        abi: CONTRACT_ABI,
-        functionName: 'submitKYC',
-        args: [
-          ipfsHash,                   // IPFS hash as plain text string
-          formData.name,              // Name as plain text string
-          encryptedInput.handles[0],  // nationality (encrypted)
-          encryptedInput.handles[1],  // birth year (encrypted)
-          encryptedInput.inputProof
-        ],
-      });
+      setIsConfirming(true);
+      const tx = await kycContract.submitKYC(
+        ipfsHash,                   // IPFS hash as plain text string
+        formData.name,              // Name as plain text string
+        encryptedInput.handles[0],  // nationality (encrypted)
+        encryptedInput.handles[1],  // birth year (encrypted)
+        encryptedInput.inputProof
+      );
+
+      setHash(tx.hash);
+
+      // Wait for transaction confirmation
+      const receipt = await tx.wait();
+      console.log('Transaction confirmed:', receipt);
+
+      setIsConfirming(false);
+      setIsSuccess(true);
 
     } catch (error) {
       console.error('Error submitting KYC:', error);
       alert('Failed to submit KYC. Please try again.');
+      setIsConfirming(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -135,6 +150,8 @@ export function KYCSubmission() {
     setIpfsHash('');
     setPreviewUrl('');
     setUploadProgress('');
+    setIsSuccess(false);
+    setHash('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }

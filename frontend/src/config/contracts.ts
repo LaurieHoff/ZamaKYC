@@ -1,5 +1,5 @@
 // ZamaKYC contract deployed on Sepolia
-export const CONTRACT_ADDRESS = '0x2a25912F7570Db983d7881BEF6BF71E8b2810c31';
+export const CONTRACT_ADDRESS = '0x967F33636db1cCFb61cFe9ac3e177d504b813e16';
 
 // Generated ABI from contract artifacts - Auto-synced from ZamaKYC.json
 export const CONTRACT_ABI = [
