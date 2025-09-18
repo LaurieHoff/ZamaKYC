@@ -2,7 +2,6 @@ import { useState, useRef } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from '../config/contracts';
 import { useZamaInstance } from '../hooks/useZamaInstance';
-import { generateMockIPFSHash } from '../utils/mockIPFS';
 
 interface KYCData {
   name: string;
@@ -41,9 +40,10 @@ export function KYCSubmission() {
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
 
-      // Generate mock IPFS hash
-      const mockHash = await generateMockIPFSHash(file);
-      setIpfsHash(mockHash);
+      // Generate simple hash from file
+      const hashInput = file.name + file.size + file.type;
+      const hash = 'Qm' + btoa(hashInput).replace(/[^a-zA-Z0-9]/g, '').slice(0, 44);
+      setIpfsHash(hash);
     }
   };
 

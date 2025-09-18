@@ -1,4 +1,5 @@
-export const CONTRACT_ADDRESS = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512';
+// ZamaKYC contract deployed on Sepolia
+export const CONTRACT_ADDRESS = '0x2a25912F7570Db983d7881BEF6BF71E8b2810c31';
 
 export const CONTRACT_ABI = [
   {

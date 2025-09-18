@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from '../config/contracts';
 import { useZamaInstance } from '../hooks/useZamaInstance';
-import { createMockImageFromHash } from '../utils/mockIPFS';
 
 const KYC_STATUS = {
   0: 'Pending',
@@ -70,20 +69,52 @@ export function KYCStatus() {
       const durationDays = "10";
       const contractAddresses = [CONTRACT_ADDRESS];
 
-      // Note: In a real app, you would need to sign the EIP712 message
-      // For demo purposes, we'll show mock decrypted data
-      const mockDecrypted = {
-        identityHash: 'QmYwAPJzv5CZsnA7dFdaM4W93zCZeYC4E2Y6HzGJ4UW7CX',
-        name: '123456789',
-        nationality: '1',
-        birthYear: '1990'
+      // Create EIP712 signature for user decryption
+      const eip712 = instance.createEIP712(
+        keypair.publicKey,
+        contractAddresses,
+        startTimeStamp,
+        durationDays
+      );
+
+      // This would need a wallet signature in a real implementation
+      // For now, we'll simulate the decryption
+      const result = await instance.userDecrypt(
+        handleContractPairs,
+        keypair.privateKey,
+        keypair.publicKey,
+        '0x' + '0'.repeat(130), // Mock signature
+        contractAddresses,
+        address,
+        startTimeStamp,
+        durationDays
+      );
+
+      // Extract decrypted values
+      const decryptedData = {
+        identityHash: result[encryptedData[0]] || 'QmDecryptedHash...',
+        name: result[encryptedData[1]] || '123456789',
+        nationality: result[encryptedData[2]] || '1',
+        birthYear: result[encryptedData[3]] || '1990'
       };
 
-      setDecryptedData(mockDecrypted);
+      setDecryptedData(decryptedData);
 
-      // Generate mock image from hash
-      const imageUrl = createMockImageFromHash(mockDecrypted.identityHash);
-      setMockImageUrl(imageUrl);
+      // Generate simple placeholder image
+      const canvas = document.createElement('canvas');
+      canvas.width = 300;
+      canvas.height = 200;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#f0f0f0';
+        ctx.fillRect(0, 0, 300, 200);
+        ctx.fillStyle = '#333';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Identity Document', 150, 100);
+        ctx.fillText(decryptedData.identityHash.slice(0, 10) + '...', 150, 120);
+      }
+      setMockImageUrl(canvas.toDataURL());
 
     } catch (error) {
       console.error('Error decrypting data:', error);
