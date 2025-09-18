@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from '../config/contracts';
 import { useZamaInstance } from '../hooks/useZamaInstance';
+import { useEthersSigner } from '../hooks/useEthersSigner';
 import '../styles/KYCStatus.css';
 
 const KYC_STATUS = {
@@ -19,19 +20,14 @@ const NATIONALITY_MAP = {
   86: 'Other'
 } as const;
 
-// Helper function to get IPFS image URL
-const getIpfsImageUrl = (hash: string) => {
-  if (!hash) return '';
-  // Use a public IPFS gateway
-  return `https://gateway.pinata.cloud/ipfs/${hash}`;
-};
 
 export function KYCStatus() {
   const { address } = useAccount();
   const { instance } = useZamaInstance();
+  const signer = useEthersSigner();
   const [decryptedData, setDecryptedData] = useState<any>(null);
   const [isDecrypting, setIsDecrypting] = useState(false);
-  const [ipfsImageUrl, setIpfsImageUrl] = useState<string>('');
+  const [showImage, setShowImage] = useState(false);
 
   // Check if user has KYC record
   const { data: hasRecord } = useReadContract({
@@ -67,46 +63,69 @@ export function KYCStatus() {
   });
 
   const decryptMyData = async () => {
-    if (!instance || !address || !kycData) return;
+    if (!instance || !address || !kycData || !signer) {
+      alert('Missing required components for decryption');
+      return;
+    }
 
     setIsDecrypting(true);
     try {
-      // Generate keypair for decryption
+      // Step 1: Generate keypair for user decryption
       const keypair = instance.generateKeypair();
 
-      // Now kycData is [identityHash(string), name(string), nationality(bytes32), birthYear(bytes32)]
-      // Only need to decrypt nationality and birthYear
+      // Step 2: Prepare ciphertext handles for decryption
+      // kycData is [identityHash(string), name(string), nationality(euint32), birthYear(euint32)]
       const handleContractPairs = [
-        { handle: kycData[2], contractAddress: CONTRACT_ADDRESS }, // nationality (encrypted)
-        { handle: kycData[3], contractAddress: CONTRACT_ADDRESS }, // birthYear (encrypted)
+        {
+          handle: kycData[2], // nationality (encrypted)
+          contractAddress: CONTRACT_ADDRESS
+        },
+        {
+          handle: kycData[3], // birthYear (encrypted)
+          contractAddress: CONTRACT_ADDRESS
+        }
       ];
 
+      // Step 3: Setup decryption parameters
       const startTimeStamp = Math.floor(Date.now() / 1000).toString();
       const durationDays = "10";
       const contractAddresses = [CONTRACT_ADDRESS];
 
-      // Create EIP712 signature for user decryption
-      instance.createEIP712(
+      // Step 4: Create EIP712 message for signing
+      const eip712 = instance.createEIP712(
         keypair.publicKey,
         contractAddresses,
         startTimeStamp,
         durationDays
       );
 
-      // This would need a wallet signature in a real implementation
-      // For now, we'll simulate the decryption
+      // Step 5: Sign the EIP712 message with user's wallet
+      const resolvedSigner = await signer;
+      if (!resolvedSigner) {
+        throw new Error('Signer not available');
+      }
+
+      const signature = await resolvedSigner.signTypedData(
+        eip712.domain,
+        {
+          UserDecryptRequestVerification: eip712.types.UserDecryptRequestVerification,
+        },
+        eip712.message
+      );
+
+      // Step 6: Perform user decryption through Relayer
       const result = await instance.userDecrypt(
         handleContractPairs,
         keypair.privateKey,
         keypair.publicKey,
-        '0x' + '0'.repeat(130), // Mock signature
+        signature.replace("0x", ""),
         contractAddresses,
         address,
         startTimeStamp,
         durationDays
       );
 
-      // Extract values (plain text and decrypted)
+      // Step 7: Extract decrypted values
       const decryptedData = {
         identityHash: kycData[0] as string, // Plain text IPFS hash
         name: kycData[1] as string, // Plain text name
@@ -116,14 +135,9 @@ export function KYCStatus() {
 
       setDecryptedData(decryptedData);
 
-      // Set IPFS image URL
-      if (decryptedData.identityHash) {
-        setIpfsImageUrl(getIpfsImageUrl(decryptedData.identityHash));
-      }
-
     } catch (error) {
       console.error('Error decrypting data:', error);
-      alert('Failed to decrypt data');
+      alert(`Failed to decrypt data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsDecrypting(false);
     }
@@ -188,32 +202,77 @@ export function KYCStatus() {
         <div className="kyc-info-section">
           {kycData && (
             <div>
-              {/* IPFS Image */}
+              {/* Identity Document Image */}
               <div className="image-section">
                 <label className="image-section-title">Identity Document</label>
                 <div className="image-container">
-                  {kycData[0] && !decryptedData ? (
-                    <div className="ipfs-placeholder">
-                      <p>📄 Document stored on IPFS</p>
-                      <p className="ipfs-hash">Hash: {(kycData[0] as string).slice(0, 15)}...</p>
-                      <p className="decrypt-hint">Decrypt to view image</p>
+                  {!showImage ? (
+                    <div className="image-placeholder">
+                      <p>📄 Document stored securely</p>
+                      {kycData[0] && (
+                        <p className="ipfs-hash">Hash: {(kycData[0] as string).slice(0, 15)}...</p>
+                      )}
+                      <button
+                        onClick={() => setShowImage(true)}
+                        className="show-button"
+                        style={{
+                          padding: '0.5rem 1rem',
+                          backgroundColor: '#10b981',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '0.25rem',
+                          cursor: 'pointer',
+                          marginTop: '0.5rem'
+                        }}
+                      >
+                        👁️ Show Image
+                      </button>
                     </div>
-                  ) : ipfsImageUrl ? (
+                  ) : (
                     <div>
                       <img
-                        src={ipfsImageUrl}
+                        src="/avatar.jpg"
                         alt="Identity document"
                         className="image-preview"
                         style={{ maxWidth: '18rem', maxHeight: '12rem', objectFit: 'contain' }}
                       />
-                      <p className="decrypted-label" style={{ marginTop: '0.5rem' }}>
-                        IPFS Hash: <code className="code-value">{kycData[0] as string}</code>
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="ipfs-placeholder">
-                      <p>📄 Document available</p>
-                      <p className="decrypt-hint">Decrypt to view</p>
+                      <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <a
+                          href="/avatar.jpg"
+                          download="identity-document.jpg"
+                          className="download-button"
+                          style={{
+                            padding: '0.25rem 0.5rem',
+                            backgroundColor: '#3b82f6',
+                            color: 'white',
+                            textDecoration: 'none',
+                            borderRadius: '0.25rem',
+                            fontSize: '0.875rem'
+                          }}
+                        >
+                          📥 Download
+                        </a>
+                        <button
+                          onClick={() => setShowImage(false)}
+                          className="hide-button"
+                          style={{
+                            padding: '0.25rem 0.5rem',
+                            backgroundColor: '#6b7280',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '0.25rem',
+                            cursor: 'pointer',
+                            fontSize: '0.875rem'
+                          }}
+                        >
+                          🙈 Hide
+                        </button>
+                        {kycData[0] && (
+                          <span className="decrypted-label">
+                            IPFS Hash: <code className="code-value">{kycData[0] as string}</code>
+                          </span>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -251,12 +310,24 @@ export function KYCStatus() {
             <p className="decrypt-description">
               Your nationality and birth year are stored encrypted. Click below to decrypt and view complete information.
             </p>
+            {!signer ? (
+              <p className="decrypt-description" style={{ color: '#ef4444' }}>
+                ⚠️ Please ensure your wallet is connected to decrypt encrypted fields.
+              </p>
+            ) : null}
             <button
               onClick={decryptMyData}
-              disabled={isDecrypting}
+              disabled={isDecrypting || !signer || !instance}
               className="decrypt-button"
+              style={{
+                opacity: (!signer || !instance) ? 0.6 : 1,
+                cursor: (!signer || !instance) ? 'not-allowed' : 'pointer'
+              }}
             >
-              {isDecrypting ? 'Decrypting...' : 'Decrypt Encrypted Fields'}
+              {isDecrypting ? 'Decrypting...' :
+               !signer ? 'Connect Wallet to Decrypt' :
+               !instance ? 'Loading...' :
+               'Decrypt Encrypted Fields'}
             </button>
           </div>
         ) : (
@@ -272,7 +343,7 @@ export function KYCStatus() {
               <button
                 onClick={() => {
                   setDecryptedData(null);
-                  setIpfsImageUrl('');
+                  setShowImage(false);
                 }}
                 className="refresh-button"
               >
