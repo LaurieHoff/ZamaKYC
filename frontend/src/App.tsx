@@ -12,7 +12,7 @@ function App() {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>
+        <RainbowKitProvider locale="en">
           <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
             <KYCApp />
           </div>
