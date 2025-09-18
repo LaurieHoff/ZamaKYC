@@ -58,31 +58,27 @@ export function KYCSubmission() {
     setIsSubmitting(true);
 
     try {
-      // Convert IPFS hash to number for encryption
-      const hashAsNumber = BigInt('0x' + ipfsHash.slice(2)); // Remove 'Qm' prefix and convert
-      const nameAsNumber = parseInt(formData.name.replace(/\D/g, '') || '123456789');
+      // Parse numeric values for encryption
       const nationalityId = parseInt(formData.nationality);
       const birthYear = parseInt(formData.birthYear);
 
-      // Create encrypted inputs
+      // Create encrypted inputs only for nationality and birth year
       const input = instance.createEncryptedInput(CONTRACT_ADDRESS, address);
-      input.add256(hashAsNumber);
-      input.add32(nameAsNumber);
       input.add32(nationalityId);
       input.add32(birthYear);
 
       const encryptedInput = await input.encrypt();
 
-      // Submit to contract
+      // Submit to contract with plain text hash and name, encrypted nationality and birth year
       writeContract({
         address: CONTRACT_ADDRESS,
         abi: CONTRACT_ABI,
         functionName: 'submitKYC',
         args: [
-          encryptedInput.handles[0], // hash
-          encryptedInput.handles[1], // name
-          encryptedInput.handles[2], // nationality
-          encryptedInput.handles[3], // birth year
+          ipfsHash,                   // IPFS hash as plain text string
+          formData.name,              // Name as plain text string
+          encryptedInput.handles[0],  // nationality (encrypted)
+          encryptedInput.handles[1],  // birth year (encrypted)
           encryptedInput.inputProof
         ],
       });

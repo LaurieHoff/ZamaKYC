@@ -1,7 +1,7 @@
 // ZamaKYC contract deployed on Sepolia
 export const CONTRACT_ADDRESS = '0x2a25912F7570Db983d7881BEF6BF71E8b2810c31';
 
-// Generated ABI from contract artifacts
+// Generated ABI from contract artifacts - Auto-synced from ZamaKYC.json
 export const CONTRACT_ABI = [
   {
     "inputs": [],
@@ -92,17 +92,36 @@ export const CONTRACT_ABI = [
         "type": "address"
       }
     ],
-    "name": "getEncryptedKYCInfo",
+    "name": "getKYCDocumentHash",
     "outputs": [
       {
-        "internalType": "euint256",
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getKYCInfo",
+    "outputs": [
+      {
+        "internalType": "string",
         "name": "identityDocumentHash",
-        "type": "bytes32"
+        "type": "string"
       },
       {
-        "internalType": "euint32",
+        "internalType": "string",
         "name": "name",
-        "type": "bytes32"
+        "type": "string"
       },
       {
         "internalType": "euint32",
@@ -113,6 +132,25 @@ export const CONTRACT_ABI = [
         "internalType": "euint32",
         "name": "birthYear",
         "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getKYCName",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
       }
     ],
     "stateMutability": "view",
@@ -254,14 +292,14 @@ export const CONTRACT_ABI = [
   {
     "inputs": [
       {
-        "internalType": "externalEuint256",
+        "internalType": "string",
         "name": "_identityDocumentHash",
-        "type": "bytes32"
+        "type": "string"
       },
       {
-        "internalType": "externalEuint32",
+        "internalType": "string",
         "name": "_name",
-        "type": "bytes32"
+        "type": "string"
       },
       {
         "internalType": "externalEuint32",

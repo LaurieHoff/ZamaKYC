@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from '../config/contracts';
 import { useZamaInstance } from '../hooks/useZamaInstance';
@@ -38,11 +38,11 @@ export function KYCStatus() {
     },
   });
 
-  // Get encrypted KYC data
-  const { data: encryptedData } = useReadContract({
+  // Get KYC data (name and hash are now plain text, nationality and birth year still encrypted)
+  const { data: kycData } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
-    functionName: 'getEncryptedKYCInfo',
+    functionName: 'getKYCInfo',
     args: address ? [address] : undefined,
     query: {
       enabled: !!address && !!hasRecord,
@@ -50,19 +50,18 @@ export function KYCStatus() {
   });
 
   const decryptMyData = async () => {
-    if (!instance || !address || !encryptedData) return;
+    if (!instance || !address || !kycData) return;
 
     setIsDecrypting(true);
     try {
       // Generate keypair for decryption
       const keypair = instance.generateKeypair();
 
-      // Prepare handles for decryption
+      // Now kycData is [identityHash(string), name(string), nationality(bytes32), birthYear(bytes32)]
+      // Only need to decrypt nationality and birthYear
       const handleContractPairs = [
-        { handle: encryptedData[0], contractAddress: CONTRACT_ADDRESS }, // identityHash
-        { handle: encryptedData[1], contractAddress: CONTRACT_ADDRESS }, // name
-        { handle: encryptedData[2], contractAddress: CONTRACT_ADDRESS }, // nationality
-        { handle: encryptedData[3], contractAddress: CONTRACT_ADDRESS }, // birthYear
+        { handle: kycData[2], contractAddress: CONTRACT_ADDRESS }, // nationality (encrypted)
+        { handle: kycData[3], contractAddress: CONTRACT_ADDRESS }, // birthYear (encrypted)
       ];
 
       const startTimeStamp = Math.floor(Date.now() / 1000).toString();
@@ -70,7 +69,7 @@ export function KYCStatus() {
       const contractAddresses = [CONTRACT_ADDRESS];
 
       // Create EIP712 signature for user decryption
-      const eip712 = instance.createEIP712(
+      instance.createEIP712(
         keypair.publicKey,
         contractAddresses,
         startTimeStamp,
@@ -90,12 +89,12 @@ export function KYCStatus() {
         durationDays
       );
 
-      // Extract decrypted values
+      // Extract values (plain text and decrypted)
       const decryptedData = {
-        identityHash: result[encryptedData[0]] || 'QmDecryptedHash...',
-        name: result[encryptedData[1]] || '123456789',
-        nationality: result[encryptedData[2]] || '1',
-        birthYear: result[encryptedData[3]] || '1990'
+        identityHash: kycData[0] as string, // Plain text IPFS hash
+        name: kycData[1] as string, // Plain text name
+        nationality: result[kycData[2] as string] || '1', // Decrypted nationality
+        birthYear: result[kycData[3] as string] || '1990' // Decrypted birth year
       };
 
       setDecryptedData(decryptedData);
@@ -212,7 +211,7 @@ export function KYCStatus() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Name (as number)</label>
+                <label className="block text-sm font-medium text-gray-700">Name</label>
                 <p className="mt-1 text-sm text-gray-900">{decryptedData.name}</p>
               </div>
 
