@@ -42,7 +42,7 @@ export function KYCStatus() {
   const { data: encryptedData } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
-    functionName: 'getKYCData',
+    functionName: 'getEncryptedKYCInfo',
     args: address ? [address] : undefined,
     query: {
       enabled: !!address && !!hasRecord,

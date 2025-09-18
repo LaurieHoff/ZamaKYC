@@ -1,6 +1,7 @@
 // ZamaKYC contract deployed on Sepolia
 export const CONTRACT_ADDRESS = '0x2a25912F7570Db983d7881BEF6BF71E8b2810c31';
 
+// Generated ABI from contract artifacts
 export const CONTRACT_ABI = [
   {
     "inputs": [],
@@ -52,6 +53,38 @@ export const CONTRACT_ABI = [
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "getAllRegisteredUsers",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -59,27 +92,27 @@ export const CONTRACT_ABI = [
         "type": "address"
       }
     ],
-    "name": "getKYCData",
+    "name": "getEncryptedKYCInfo",
     "outputs": [
       {
         "internalType": "euint256",
-        "name": "identityHash",
-        "type": "uint256"
+        "name": "identityDocumentHash",
+        "type": "bytes32"
       },
       {
         "internalType": "euint32",
         "name": "name",
-        "type": "uint256"
+        "type": "bytes32"
       },
       {
         "internalType": "euint32",
         "name": "nationality",
-        "type": "uint256"
+        "type": "bytes32"
       },
       {
         "internalType": "euint32",
         "name": "birthYear",
-        "type": "uint256"
+        "type": "bytes32"
       }
     ],
     "stateMutability": "view",
@@ -97,12 +130,25 @@ export const CONTRACT_ABI = [
     "outputs": [
       {
         "internalType": "enum ZamaKYC.KYCStatus",
-        "name": "status",
+        "name": "",
         "type": "uint8"
       },
       {
         "internalType": "uint256",
-        "name": "timestamp",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getPendingKYCCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
         "type": "uint256"
       }
     ],
@@ -131,23 +177,100 @@ export const CONTRACT_ABI = [
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "isKYCVerified",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "protocolId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "registeredUsers",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "rejectKYC",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "externalEuint256",
-        "name": "encryptedIdentityHash",
+        "name": "_identityDocumentHash",
         "type": "bytes32"
       },
       {
         "internalType": "externalEuint32",
-        "name": "encryptedName",
+        "name": "_name",
         "type": "bytes32"
       },
       {
         "internalType": "externalEuint32",
-        "name": "encryptedNationality",
+        "name": "_nationality",
         "type": "bytes32"
       },
       {
         "internalType": "externalEuint32",
-        "name": "encryptedBirthYear",
+        "name": "_birthYear",
         "type": "bytes32"
       },
       {
@@ -157,6 +280,32 @@ export const CONTRACT_ABI = [
       }
     ],
     "name": "submitKYC",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "verifyKYC",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
