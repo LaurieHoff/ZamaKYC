@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from '../config/contracts';
 import { useZamaInstance } from '../hooks/useZamaInstance';
+import './KYCStatus.css';
 
 const KYC_STATUS = {
   0: 'Pending',
@@ -125,18 +126,18 @@ export function KYCStatus() {
 
   if (!address) {
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-600">Please connect your wallet to check KYC status</p>
+      <div className="no-record-message">
+        <p className="no-record-description">Please connect your wallet to check KYC status</p>
       </div>
     );
   }
 
   if (!hasRecord) {
     return (
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-6 text-center">
-          <h2 className="text-xl font-bold text-yellow-900 mb-2">No KYC Record Found</h2>
-          <p className="text-yellow-700">
+      <div className="kyc-status-container">
+        <div className="status-card no-record-message">
+          <h2 className="no-record-title">No KYC Record Found</h2>
+          <p className="no-record-description">
             You haven't submitted KYC information yet. Please submit your KYC in the "Submit KYC" tab.
           </p>
         </div>
@@ -148,91 +149,92 @@ export function KYCStatus() {
   const timestamp = statusData ? new Date(Number(statusData[1]) * 1000).toLocaleString() : '';
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="kyc-status-container">
       {/* Status Card */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">KYC Status</h2>
+      <div className="status-card" style={{ marginBottom: '1.5rem' }}>
+        <h2 className="status-title">KYC Status</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Status</label>
-            <div className="mt-1">
-              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                status === 'Verified' ? 'bg-green-100 text-green-800' :
-                status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-red-100 text-red-800'
+        <div className="status-grid">
+          <div className="status-item">
+            <label className="status-label">Status</label>
+            <div>
+              <span className={`status-value ${
+                status === 'Verified' ? 'status-verified' :
+                status === 'Pending' ? 'status-pending' :
+                'status-rejected'
               }`}>
                 {status}
               </span>
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Submitted</label>
-            <p className="mt-1 text-sm text-gray-900">{timestamp}</p>
+          <div className="status-item">
+            <label className="status-label">Submitted</label>
+            <p className="status-value">{timestamp}</p>
           </div>
         </div>
       </div>
 
       {/* Decrypt Data Card */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">Your Encrypted Data</h3>
+      <div className="status-card" style={{ marginBottom: '1.5rem' }}>
+        <h3 className="status-title">Your Encrypted Data</h3>
 
         {!decryptedData ? (
-          <div className="text-center py-8">
-            <p className="text-gray-600 mb-4">
+          <div className="decrypt-section">
+            <p className="decrypt-description">
               Your KYC data is stored encrypted on the blockchain. Click below to decrypt and view your information.
             </p>
             <button
               onClick={decryptMyData}
               disabled={isDecrypting}
-              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+              className="decrypt-button"
             >
               {isDecrypting ? 'Decrypting...' : 'Decrypt My Data'}
             </button>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Identity Document</label>
+          <div className="decrypted-section">
+            <div className="image-section">
+              <label className="image-section-title">Identity Document</label>
               {mockImageUrl && (
-                <div className="mt-2">
+                <div>
                   <img
                     src={mockImageUrl}
                     alt="Identity document"
-                    className="max-w-xs h-auto rounded-md border"
+                    className="image-preview"
+                    style={{ maxWidth: '18rem' }}
                   />
-                  <p className="text-sm text-gray-600 mt-1">
-                    IPFS Hash: <code className="bg-gray-100 px-1 rounded">{decryptedData.identityHash}</code>
+                  <p className="decrypted-label" style={{ marginTop: '0.5rem' }}>
+                    IPFS Hash: <code className="code-value">{decryptedData.identityHash}</code>
                   </p>
                 </div>
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Name</label>
-                <p className="mt-1 text-sm text-gray-900">{decryptedData.name}</p>
+            <div className="decrypted-grid" style={{ marginTop: '1rem' }}>
+              <div className="decrypted-item">
+                <label className="decrypted-label">Name</label>
+                <p className="decrypted-value">{decryptedData.name}</p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Nationality ID</label>
-                <p className="mt-1 text-sm text-gray-900">{decryptedData.nationality}</p>
+              <div className="decrypted-item">
+                <label className="decrypted-label">Nationality ID</label>
+                <p className="decrypted-value">{decryptedData.nationality}</p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Birth Year</label>
-                <p className="mt-1 text-sm text-gray-900">{decryptedData.birthYear}</p>
+              <div className="decrypted-item">
+                <label className="decrypted-label">Birth Year</label>
+                <p className="decrypted-value">{decryptedData.birthYear}</p>
               </div>
             </div>
 
-            <div className="pt-4 border-t">
+            <div className="refresh-section">
               <button
                 onClick={() => {
                   setDecryptedData(null);
                   setMockImageUrl('');
                 }}
-                className="text-sm text-gray-600 hover:text-gray-800"
+                className="refresh-button"
               >
                 Hide Decrypted Data
               </button>
@@ -241,13 +243,13 @@ export function KYCStatus() {
         )}
       </div>
 
-      <div className="bg-blue-50 rounded-md p-4">
-        <h4 className="text-sm font-medium text-blue-900 mb-2">Privacy Information</h4>
-        <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Your data is encrypted with Zama FHE technology</li>
-          <li>• Only you can decrypt your personal information</li>
-          <li>• Platform operators can verify your KYC status without seeing your data</li>
-          <li>• All cryptographic operations happen locally in your browser</li>
+      <div className="decrypt-section">
+        <h4 className="decrypt-title">Privacy Information</h4>
+        <ul className="decrypt-description" style={{ listStyle: 'none', padding: 0 }}>
+          <li style={{ marginBottom: '0.25rem' }}>• Your data is encrypted with Zama FHE technology</li>
+          <li style={{ marginBottom: '0.25rem' }}>• Only you can decrypt your personal information</li>
+          <li style={{ marginBottom: '0.25rem' }}>• Platform operators can verify your KYC status without seeing your data</li>
+          <li style={{ marginBottom: '0.25rem' }}>• All cryptographic operations happen locally in your browser</li>
         </ul>
       </div>
     </div>

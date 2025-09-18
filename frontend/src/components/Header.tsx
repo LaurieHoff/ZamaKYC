@@ -1,15 +1,16 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import './Header.css';
 
 export function Header() {
   return (
-    <header className="bg-white shadow">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-6">
-          <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-gray-900">
+    <header className="header">
+      <div className="header-container">
+        <div className="header-content">
+          <div className="header-left">
+            <h1 className="header-title">
               ZamaKYC Platform
             </h1>
-            <span className="ml-3 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+            <span className="header-badge">
               Confidential
             </span>
           </div>
