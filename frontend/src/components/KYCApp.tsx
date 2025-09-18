@@ -39,7 +39,7 @@ export function KYCApp() {
                   onClick={() => setActiveTab('status')}
                   className={`tab-button ${activeTab === 'status' ? 'active' : 'inactive'}`}
                 >
-                  Check Status
+                  Check KYC
                 </button>
               </nav>
             </div>
