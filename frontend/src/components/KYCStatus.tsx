@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from '../config/contracts';
 import { useZamaInstance } from '../hooks/useZamaInstance';
-import './KYCStatus.css';
+import '../styles/KYCStatus.css';
 
 const KYC_STATUS = {
   0: 'Pending',

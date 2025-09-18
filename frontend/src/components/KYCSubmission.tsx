@@ -3,7 +3,7 @@ import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagm
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from '../config/contracts';
 import { useZamaInstance } from '../hooks/useZamaInstance';
 import { mockIPFSUpload, isValidIPFSHash } from '../utils/ipfs';
-import './KYCSubmission.css';
+import '../styles/KYCSubmission.css';
 
 interface KYCData {
   name: string;

@@ -4,7 +4,7 @@ import { useAccount } from 'wagmi';
 import { Header } from './Header';
 import { KYCSubmission } from './KYCSubmission';
 import { KYCStatus } from './KYCStatus';
-import './KYCApp.css';
+import '../styles/KYCApp.css';
 
 export function KYCApp() {
   const { isConnected } = useAccount();
