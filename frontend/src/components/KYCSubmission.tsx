@@ -4,7 +4,7 @@ import { Contract } from 'ethers';
 import { useEthersSigner } from '../hooks/useEthersSigner';
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from '../config/contracts';
 import { useZamaInstance } from '../hooks/useZamaInstance';
-import { mockIPFSUpload, isValidIPFSHash } from '../utils/ipfs';
+import { mockIPFSUpload } from '../utils/ipfs';
 import '../styles/KYCSubmission.css';
 
 interface KYCData {
@@ -34,7 +34,6 @@ export function KYCSubmission() {
   const [uploadProgress, setUploadProgress] = useState<string>('');
   const [isConfirming, setIsConfirming] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [hash, setHash] = useState<string>('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -122,7 +121,6 @@ export function KYCSubmission() {
         encryptedInput.inputProof
       );
 
-      setHash(tx.hash);
 
       // Wait for transaction confirmation
       const receipt = await tx.wait();
@@ -151,7 +149,6 @@ export function KYCSubmission() {
     setPreviewUrl('');
     setUploadProgress('');
     setIsSuccess(false);
-    setHash('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }

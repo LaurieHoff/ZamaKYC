@@ -234,3 +234,60 @@
 .refresh-button:hover {
   background-color: #4b5563;
 }
+
+/* New styles for improved IPFS and encrypted data display */
+.kyc-info-section {
+  margin-top: 1rem;
+}
+
+.image-container {
+  margin-top: 0.5rem;
+}
+
+.ipfs-placeholder {
+  background-color: #f9fafb;
+  border: 2px dashed #d1d5db;
+  border-radius: 0.5rem;
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.ipfs-placeholder p {
+  margin: 0.25rem 0;
+}
+
+.ipfs-hash {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #374151;
+  background-color: #f3f4f6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  display: inline-block;
+  margin: 0.5rem 0;
+}
+
+.decrypt-hint {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.success-message {
+  background-color: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 0.375rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.success-message p {
+  margin: 0.25rem 0;
+  color: #166534;
+}
+
+.success-message .decrypt-description {
+  color: #166534;
+  font-size: 0.875rem;
+}

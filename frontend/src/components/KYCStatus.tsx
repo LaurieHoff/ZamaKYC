@@ -10,12 +10,28 @@ const KYC_STATUS = {
   2: 'Rejected'
 } as const;
 
+const NATIONALITY_MAP = {
+  1: 'USA',
+  2: 'China',
+  3: 'UK',
+  4: 'Germany',
+  5: 'France',
+  86: 'Other'
+} as const;
+
+// Helper function to get IPFS image URL
+const getIpfsImageUrl = (hash: string) => {
+  if (!hash) return '';
+  // Use a public IPFS gateway
+  return `https://gateway.pinata.cloud/ipfs/${hash}`;
+};
+
 export function KYCStatus() {
   const { address } = useAccount();
   const { instance } = useZamaInstance();
   const [decryptedData, setDecryptedData] = useState<any>(null);
   const [isDecrypting, setIsDecrypting] = useState(false);
-  const [mockImageUrl, setMockImageUrl] = useState<string>('');
+  const [ipfsImageUrl, setIpfsImageUrl] = useState<string>('');
 
   // Check if user has KYC record
   const { data: hasRecord } = useReadContract({
@@ -100,21 +116,10 @@ export function KYCStatus() {
 
       setDecryptedData(decryptedData);
 
-      // Generate simple placeholder image
-      const canvas = document.createElement('canvas');
-      canvas.width = 300;
-      canvas.height = 200;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.fillStyle = '#f0f0f0';
-        ctx.fillRect(0, 0, 300, 200);
-        ctx.fillStyle = '#333';
-        ctx.font = '16px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('Identity Document', 150, 100);
-        ctx.fillText(decryptedData.identityHash.slice(0, 10) + '...', 150, 120);
+      // Set IPFS image URL
+      if (decryptedData.identityHash) {
+        setIpfsImageUrl(getIpfsImageUrl(decryptedData.identityHash));
       }
-      setMockImageUrl(canvas.toDataURL());
 
     } catch (error) {
       console.error('Error decrypting data:', error);
@@ -175,64 +180,99 @@ export function KYCStatus() {
         </div>
       </div>
 
-      {/* Decrypt Data Card */}
+      {/* KYC Information Card */}
       <div className="status-card" style={{ marginBottom: '1.5rem' }}>
-        <h3 className="status-title">Your Encrypted Data</h3>
+        <h3 className="status-title">Your KYC Information</h3>
+
+        {/* Always show basic info with encrypted fields as *** */}
+        <div className="kyc-info-section">
+          {kycData && (
+            <div>
+              {/* IPFS Image */}
+              <div className="image-section">
+                <label className="image-section-title">Identity Document</label>
+                <div className="image-container">
+                  {kycData[0] && !decryptedData ? (
+                    <div className="ipfs-placeholder">
+                      <p>📄 Document stored on IPFS</p>
+                      <p className="ipfs-hash">Hash: {(kycData[0] as string).slice(0, 15)}...</p>
+                      <p className="decrypt-hint">Decrypt to view image</p>
+                    </div>
+                  ) : ipfsImageUrl ? (
+                    <div>
+                      <img
+                        src={ipfsImageUrl}
+                        alt="Identity document"
+                        className="image-preview"
+                        style={{ maxWidth: '18rem', maxHeight: '12rem', objectFit: 'contain' }}
+                      />
+                      <p className="decrypted-label" style={{ marginTop: '0.5rem' }}>
+                        IPFS Hash: <code className="code-value">{kycData[0] as string}</code>
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="ipfs-placeholder">
+                      <p>📄 Document available</p>
+                      <p className="decrypt-hint">Decrypt to view</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Basic Information Grid */}
+              <div className="decrypted-grid" style={{ marginTop: '1rem' }}>
+                <div className="decrypted-item">
+                  <label className="decrypted-label">Name</label>
+                  <p className="decrypted-value">{kycData[1] as string || 'Not available'}</p>
+                </div>
+
+                <div className="decrypted-item">
+                  <label className="decrypted-label">Nationality</label>
+                  <p className="decrypted-value">
+                    {decryptedData ?
+                      (NATIONALITY_MAP[decryptedData.nationality as keyof typeof NATIONALITY_MAP] || 'Unknown') :
+                      '***'}
+                  </p>
+                </div>
+
+                <div className="decrypted-item">
+                  <label className="decrypted-label">Birth Year</label>
+                  <p className="decrypted-value">
+                    {decryptedData ? decryptedData.birthYear : '***'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {!decryptedData ? (
-          <div className="decrypt-section">
+          <div className="decrypt-section" style={{ marginTop: '1.5rem' }}>
             <p className="decrypt-description">
-              Your KYC data is stored encrypted on the blockchain. Click below to decrypt and view your information.
+              Your nationality and birth year are stored encrypted. Click below to decrypt and view complete information.
             </p>
             <button
               onClick={decryptMyData}
               disabled={isDecrypting}
               className="decrypt-button"
             >
-              {isDecrypting ? 'Decrypting...' : 'Decrypt My Data'}
+              {isDecrypting ? 'Decrypting...' : 'Decrypt Encrypted Fields'}
             </button>
           </div>
         ) : (
-          <div className="decrypted-section">
-            <div className="image-section">
-              <label className="image-section-title">Identity Document</label>
-              {mockImageUrl && (
-                <div>
-                  <img
-                    src={mockImageUrl}
-                    alt="Identity document"
-                    className="image-preview"
-                    style={{ maxWidth: '18rem' }}
-                  />
-                  <p className="decrypted-label" style={{ marginTop: '0.5rem' }}>
-                    IPFS Hash: <code className="code-value">{decryptedData.identityHash}</code>
-                  </p>
-                </div>
-              )}
+          <div className="decrypted-section" style={{ marginTop: '1.5rem' }}>
+            <div className="success-message">
+              <p>✅ Successfully decrypted your encrypted data!</p>
+              <p className="decrypt-description">
+                All your information is now visible above, including nationality and birth year.
+              </p>
             </div>
 
-            <div className="decrypted-grid" style={{ marginTop: '1rem' }}>
-              <div className="decrypted-item">
-                <label className="decrypted-label">Name</label>
-                <p className="decrypted-value">{decryptedData.name}</p>
-              </div>
-
-              <div className="decrypted-item">
-                <label className="decrypted-label">Nationality ID</label>
-                <p className="decrypted-value">{decryptedData.nationality}</p>
-              </div>
-
-              <div className="decrypted-item">
-                <label className="decrypted-label">Birth Year</label>
-                <p className="decrypted-value">{decryptedData.birthYear}</p>
-              </div>
-            </div>
-
-            <div className="refresh-section">
+            <div className="refresh-section" style={{ marginTop: '1rem' }}>
               <button
                 onClick={() => {
                   setDecryptedData(null);
-                  setMockImageUrl('');
+                  setIpfsImageUrl('');
                 }}
                 className="refresh-button"
               >
